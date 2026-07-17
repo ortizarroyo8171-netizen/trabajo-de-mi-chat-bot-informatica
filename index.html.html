@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoBot - Tu Asistente del Medio Ambiente</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* Estilos personalizados para mejorar la experiencia visual */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .message-bubble {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 min-h-screen text-slate-800 font-sans flex flex-col">
+
+    <header class="bg-white/80 backdrop-blur-md border-b border-green-100 sticky top-0 z-30 shadow-sm transition-all">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-gradient-to-tr from-green-500 to-emerald-600 p-2.5 rounded-2xl shadow-md text-white">
+                    <i class="fa-solid fa-seedling text-xl animate-bounce"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg text-emerald-900 leading-none flex items-center gap-1.5">
+                        EcoBot
+                        <span class="bg-emerald-100 text-emerald-800 text-[10px] font-semibold px-2 py-0.5 rounded-full">Eco-Guía</span>
+                    </h1>
+                    <p class="text-xs text-slate-500 mt-1">Cuidando el planeta, un chat a la vez</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <!-- Botón de la calculadora móvil -->
+                <button onclick="toggleCalculator()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 p-2.5 rounded-xl text-sm font-medium flex items-center gap-2 transition-all">
+                    <i class="fa-solid fa-leaf"></i>
+                    <span class="hidden sm:inline">Calcular Huella</span>
+                </button>
+                
+                <!-- Botón de ajustes de API -->
+                <button onclick="toggleSettings()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 p-2.5 rounded-xl transition-all" title="Configurar Inteligencia Artificial">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-6xl w-full mx-auto p-4 flex gap-6 overflow-hidden h-[calc(100vh-73px)] relative">
+        
+        <!-- Panel de Ajustes / Configuración de API (Izquierdo, colapsable en móviles) -->
+        <div id="settings-panel" class="hidden lg:flex flex-col w-80 bg-white border border-slate-100 rounded-3xl p-5 shadow-sm shrink-0 h-full justify-between transition-all">
+            <div>
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-info text-emerald-500"></i>
+                        Configuración de IA
+                    </h3>
+                    <button onclick="toggleSettings()" class="lg:hidden text-slate-400 hover:text-slate-600">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+                <p class="text-xs text-slate-500 mb-4 leading-relaxed">
+                    EcoBot cuenta con respuestas automáticas incorporadas. Si deseas tener una conversación abierta con Inteligencia Artificial avanzada, añade tu clave de API de Gemini.
+                </p>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Clave de API Gemini (Opcional)</label>
+                        <div class="relative">
+                            <input id="api-key-input" type="password" placeholder="AIzaSy..." class="w-full pl-3 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-green-400 transition-all">
+                            <button onclick="togglePasswordVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                <i id="eye-icon" class="fa-solid fa-eye text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <button onclick="saveApiKey()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-xl text-xs font-semibold shadow-sm hover:shadow transition-all">
+                        Guardar Configuración
+                    </button>
+                    
+                    <div id="api-status" class="hidden p-3 rounded-xl text-xs"></div>
+                </div>
+            </div>
+            
+            <!-- Tarjeta de datos ecológicos rápidos -->
+            <div class="bg-gradient-to-br from-emerald-50 to-green-100/50 p-4 rounded-2xl border border-emerald-100/50">
+                <h4 class="font-bold text-emerald-900 text-xs flex items-center gap-1.5 mb-1.5">
+                    <i class="fa-solid fa-lightbulb text-amber-500"></i> ¿Sabías que?
+                </h4>
+                <p id="eco-fact" class="text-xs text-emerald-800 leading-relaxed">
+                    Un solo grifo goteando puede desperdiciar más de 30 litros de agua al día. ¡Asegúrate de cerrarlos bien!
+                </p>
+                <button onclick="getRandomFact()" class="text-[10px] text-emerald-600 font-semibold mt-2 hover:underline flex items-center gap-1">
+                    Ver otro dato <i class="fa-solid fa-arrow-right text-[8px]"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="flex-1 flex flex-col bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-sm h-full relative">
+            
+            <!-- Barra superior del chat -->
+            <div class="bg-slate-50 border-b border-slate-100 px-5 py-3 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="relative">
+                        <div class="w-10 h-10 bg-gradient-to-tr from-green-400 to-emerald-500 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-sm">
+                            <i class="fa-solid fa-robot"></i>
+                        </div>
+                        <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+                    </div>
+                    <div>
+                        <h2 class="font-bold text-slate-800 text-sm">EcoBot Inteligente</h2>
+                        <span id="ai-mode-badge" class="text-[10px] text-slate-500 font-medium flex items-center gap-1">
+                            <i class="fa-solid fa-database"></i> Respuestas Integradas (Sin conexión)
+                        </span>
+                    </div>
+                </div>
+                <button onclick="clearChat()" class="text-slate-400 hover:text-rose-500 p-2 rounded-lg transition-all" title="Limpiar conversación">
+                    <i class="fa-solid fa-trash-can text-sm"></i>
+                </button>
+            </div>
+
+            <!-- Área de mensajes -->
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-5 space-y-4">
+                <!-- Mensaje de bienvenida inicial -->
+                <div class="flex items-start gap-3 max-w-[85%]">
+                    <div class="w-8 h-8 bg-emerald-100 text-emerald-700 rounded-xl flex items-center justify-center shrink-0">
+                        <i class="fa-solid fa-robot text-xs"></i>
+                    </div>
+                    <div class="bg-slate-100 text-slate-800 rounded-2xl rounded-tl-none p-3.5 text-sm shadow-sm leading-relaxed message-bubble">
+                        <p class="font-semibold mb-1">¡Hola! Soy EcoBot. 🌿</p>
+                        Estoy programado para ayudarte a cuidar de nuestro maravilloso planeta. Puedes hacerme preguntas directamente o seleccionar alguno de estos temas para empezar:
+                        
+                        <!-- Sugerencias de acción rápidas -->
+                        <div class="mt-3 flex flex-wrap gap-1.5">
+                            <button onclick="selectSuggestion('¿Cómo puedo reciclar correctamente?')" class="bg-white hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 text-slate-600 text-xs px-2.5 py-1.5 rounded-lg font-medium transition-all">
+                                ♻️ ¿Cómo reciclar?
+                            </button>
+                            <button onclick="selectSuggestion('Dame consejos para ahorrar agua')" class="bg-white hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 text-slate-600 text-xs px-2.5 py-1.5 rounded-lg font-medium transition-all">
+                                💧 Ahorrar agua
+                            </button>
+                            <button onclick="selectSuggestion('¿Cómo reducir el consumo de energía?')" class="bg-white hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 text-slate-600 text-xs px-2.5 py-1.5 rounded-lg font-medium transition-all">
+                                🔌 Ahorrar energía
+                            </button>
+                            <button onclick="selectSuggestion('¿Qué hago para evitar el plástico?')" class="bg-white hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 text-slate-600 text-xs px-2.5 py-1.5 rounded-lg font-medium transition-all">
+                                🚫 Menos plástico
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Indicador de que el bot está escribiendo -->
+            <div id="typing-indicator" class="hidden px-5 py-2 flex items-center gap-2">
+                <div class="bg-slate-100 text-slate-500 text-xs px-3 py-1.5 rounded-full flex items-center gap-2">
+                    <span class="flex gap-1">
+                        <span class="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce"></span>
+                        <span class="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                        <span class="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+                    </span>
+                    <span>EcoBot está analizando...</span>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-slate-100 bg-slate-50/50">
+                <form id="chat-form" onsubmit="handleSendMessage(event)" class="flex gap-2">
+                    <input id="message-input" type="text" placeholder="Pregúntame algo sobre ecología (ej: ¿Cómo reciclar cartón?)..." class="flex-1 bg-white border border-slate-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" autocomplete="off">
+                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 rounded-2xl flex items-center justify-center transition-all shadow-md shadow-emerald-600/10 hover:shadow-emerald-600/20">
+                        <i class="fa-solid fa-paper-plane text-sm"></i>
+                    </button>
+                </form>
+                <p class="text-[10px] text-slate-400 text-center mt-2">
+                    "La Tierra proporciona lo suficiente para satisfacer las necesidades de cada hombre, pero no la codicia de cada hombre." — Mahatma Gandhi
+                </p>
+            </div>
+        </div>
+
+        <div id="calculator-panel" class="hidden flex flex-col w-80 bg-white border border-slate-100 rounded-3xl p-5 shadow-sm shrink-0 h-full justify-between overflow-y-auto">
+            <div>
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-simple text-emerald-500"></i>
+                        Tu Huella de Carbono
+                    </h3>
+                    <button onclick="toggleCalculator()" class="text-slate-400 hover:text-slate-600">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+                <p class="text-xs text-slate-500 mb-4 leading-relaxed">
+                    Calcula de forma aproximada el dióxido de carbono mensual que producen tus hábitos habituales.
+                </p>
+                
+                <!-- Formulario de la calculadora -->
+                <div class="space-y-4">
+                    <!-- Campo Transporte -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">🚗 Transporte semanal (km en auto/moto)</label>
+                        <input id="calc-transport" type="number" min="0" value="50" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-green-400 transition-all">
+                    </div>
+                    
+                    <!-- Campo Electricidad -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">🔌 Consumo eléctrico mensual (kWh)</label>
+                        <input id="calc-electricity" type="number" min="0" value="150" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-green-400 transition-all">
+                    </div>
+                    
+                    <!-- Campo Consumo Carne -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">🥩 Frecuencia consumo de carne semanal</label>
+                        <select id="calc-diet" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-green-400 transition-all">
+                            <option value="high">Diario (Alta huella)</option>
+                            <option value="medium" selected>Pocas veces a la semana (Media)</option>
+                            <option value="low">Vegetariano/Vegano (Baja)</option>
+                        </select>
+                    </div>
+
+                    <!-- Campo Reciclaje habitual -->
+                    <div class="flex items-center gap-2 pt-1">
+                        <input id="calc-recycle" type="checkbox" checked class="w-4 h-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500">
+                        <label for="calc-recycle" class="text-xs font-medium text-slate-600">♻️ Suelo separar y reciclar mis residuos</label>
+                    </div>
+
+                    <button onclick="calculateCarbonFootprint()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-xl text-xs font-semibold shadow-sm hover:shadow transition-all">
+                        Calcular Emisiones
+                    </button>
+                </div>
+            </div>
+
+            <!-- Resultado de la calculadora -->
+            <div id="calc-result-box" class="mt-4 p-4 bg-slate-50 border border-slate-100 rounded-2xl hidden">
+                <div class="text-center">
+                    <span class="text-xs text-slate-500 block">Tu emisión estimada</span>
+                    <span id="calc-co2-val" class="text-3xl font-extrabold text-emerald-700 my-1 block">0.00</span>
+                    <span class="text-[10px] text-slate-400 block uppercase font-bold tracking-wider mb-2">Toneladas CO₂ / Año</span>
+                    <div id="calc-badge" class="inline-block px-3 py-1 rounded-full text-xs font-bold mb-3"></div>
+                    <p id="calc-feedback" class="text-xs text-slate-600 leading-relaxed"></p>
+                    
+                    <button onclick="sendResultToBot()" class="mt-3 text-xs text-emerald-600 font-bold hover:underline flex items-center justify-center gap-1.5 w-full">
+                        <i class="fa-solid fa-comment"></i> Analizar con EcoBot
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal de Alerta Customizado (Reemplazo para alert()) -->
+    <div id="custom-modal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-xl border border-slate-100 animate-fadeIn">
+            <div id="modal-icon-box" class="w-12 h-12 rounded-2xl flex items-center justify-center text-xl mb-4"></div>
+            <h3 id="modal-title" class="font-bold text-slate-800 text-lg mb-2"></h3>
+            <p id="modal-text" class="text-slate-500 text-sm leading-relaxed mb-5"></p>
+            <button onclick="closeModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-semibold text-sm transition-all shadow-md shadow-emerald-600/10">Entendido</button>
+        </div>
+    </div>
+
+    <script>
+        // --- BASE DE DATOS LOCAL DE CONSEJOS ECOLÓGICOS ---
+        const LOCAL_DATABASE = {
+            "hola": "¡Hola! Bienvenido a EcoBot. Estoy listo para asistirte en todo lo relacionado con el cuidado del medio ambiente. ¿Sobre qué tema te gustaría investigar hoy? (Prueba con 'reciclar', 'ahorrar agua', o 'reducir plastico')",
+            "buenos dias": "¡Excelente día! Un gran día para comenzar con hábitos más ecológicos. ¿En qué te asisto hoy?",
+            "buenas tardes": "¡Hola, muy buenas tardes! ¿Listo para aprender más sobre cómo cuidar nuestro entorno hoy?",
+            "buenas noches": "¡Buenas noches! Que tengas un excelente descanso ecológico. Recuerda apagar por completo tus dispositivos eléctricos para evitar el consumo fantasma.",
+            "reciclar": "♻️ El reciclaje es esencial. Recuerda separar los residuos:\n- 🔵 **Azul**: Papel y cartón limpios.\n- 🟡 **Amarillo**: Envases de plástico, latas y tetrabriks.\n- 🟢 **Verde**: Frascos y botellas de vidrio (sin tapas).\n- 🟤 **Marrón**: Residuos orgánicos.\n- ⚫ **Gris/Resto**: Residuos no reciclables.\n¡Lavar ligeramente los contenedores antes de reciclarlos evita malos olores y mejora su procesamiento!",
+            "agua": "💧 El agua dulce es el recurso más valioso. Aquí tienes 3 hábitos inmediatos:\n1. Cierra el grifo al cepillarte los dientes (ahorras 12L por minuto).\n2. Reduce tus duchas a 5 minutos.\n3. Repara cualquier fuga. Un grifo que gotea pierde hasta 30 litros diarios.",
+            "energia": "🔌 Para ahorrar electricidad en casa:\n1. Utiliza bombillas LED de bajo consumo.\n2. Desconecta electrodomésticos que no estés utilizando (cargadores, microondas, televisores).\n3. Aprovecha la luz solar abriendo cortinas durante el día.",
+            "plastico": "🚫 El plástico tarda hasta 500 años en descomponerse. Empieza a reducirlo así:\n- Usa bolsas de tela para las compras.\n- Consigue una botella de agua reutilizable de metal o vidrio.\n- Evita los popotes/pajitas y cubiertos de plástico desechable.",
+            "gracias": "¡Con todo gusto! Me alegra mucho ver que te interesa cuidar el medio ambiente. Cada pequeña acción cuenta para sanar el planeta. 💚",
+            "huella": "La huella de carbono representa la cantidad de gases de efecto invernadero (principalmente CO2) que liberamos a la atmósfera con nuestras actividades. ¡Utiliza la herramienta 'Calcular Huella' de la barra superior para medir la tuya ahora mismo!",
+            "compost": "🍂 El compostaje es excelente para convertir tus residuos de cocina (cáscaras de frutas, verduras, café) y jardín en abono natural rico en nutrientes para las plantas. Reduce tu basura total hasta en un 40%."
+        };
+
+        const ECO_FACTS = [
+            "Un solo grifo goteando puede desperdiciar más de 30 litros de agua al día.",
+            "Reciclar una sola botella de plástico ahorra suficiente energía para encender una bombilla durante 6 horas.",
+            "Se necesitan aproximadamente 2,700 litros de agua para fabricar una sola camiseta de algodón convencional.",
+            "Alrededor del 8 millones de toneladas de plástico terminan en los océanos cada año.",
+            "Los árboles absorben cerca de 22 kilogramos de dióxido de carbono al año.",
+            "Apagar la pantalla del computador cuando no la usas ahorra hasta el 15% de su energía diaria."
+        ];
+
+        // --- GESTIÓN DE ESTADO ---
+        let geminiApiKey = localStorage.getItem('gemini_api_key') || "";
+        let chatHistory = []; // Registro de conversación
+
+        // Al iniciar la página
+        window.onload = function() {
+            if (geminiApiKey) {
+                document.getElementById('api-key-input').value = geminiApiKey;
+                updateAiModeBadge(true);
+            }
+            getRandomFact();
+        };
+
+        // Mostrar un dato aleatorio en el panel de consejos
+        function getRandomFact() {
+            const factElement = document.getElementById('eco-fact');
+            const randomIndex = Math.floor(Math.random() * ECO_FACTS.length);
+            factElement.classList.add('opacity-0');
+            setTimeout(() => {
+                factElement.innerText = ECO_FACTS[randomIndex];
+                factElement.classList.remove('opacity-0');
+            }, 200);
+        }
+
+        // Mostrar/Ocultar contraseña de la API Key
+        function togglePasswordVisibility() {
+            const input = document.getElementById('api-key-input');
+            const icon = document.getElementById('eye-icon');
+            if (input.type === "password") {
+                input.type = "text";
+                icon.className = "fa-solid fa-eye-slash text-xs";
+            } else {
+                input.type = "password";
+                icon.className = "fa-solid fa-eye text-xs";
+            }
+        }
+
+        // Guardar API Key localmente
+        function saveApiKey() {
+            const key = document.getElementById('api-key-input').value.trim();
+            geminiApiKey = key;
+            localStorage.setItem('gemini_api_key', key);
+            
+            const statusDiv = document.getElementById('api-status');
+            statusDiv.classList.remove('hidden');
+            
+            if (key) {
+                statusDiv.className = "p-3 rounded-xl text-xs bg-emerald-50 text-emerald-800 border border-emerald-100 mt-2";
+                statusDiv.innerHTML = "<i class='fa-solid fa-circle-check'></i> Clave de API guardada con éxito. EcoBot ahora utilizará IA avanzada.";
+                updateAiModeBadge(true);
+                showCustomModal("IA Activada", "Clave de API configurada. Ahora interactúas con Gemini 3.1 Flash.", "success");
+            } else {
+                statusDiv.className = "p-3 rounded-xl text-xs bg-slate-50 text-slate-800 border border-slate-100 mt-2";
+                statusDiv.innerHTML = "<i class='fa-solid fa-circle-info'></i> Sin clave de API. Usando el modo local de respuestas.";
+                updateAiModeBadge(false);
+            }
+            
+            setTimeout(() => { statusDiv.classList.add('hidden'); }, 4000);
+        }
+
+        function updateAiModeBadge(isAiActive) {
+            const badge = document.getElementById('ai-mode-badge');
+            if (isAiActive) {
+                badge.className = "text-[10px] text-emerald-600 font-semibold flex items-center gap-1";
+                badge.innerHTML = "<i class='fa-solid fa-bolt text-amber-500 animate-pulse'></i> Modo Inteligencia Artificial (Gemini Active)";
+            } else {
+                badge.className = "text-[10px] text-slate-500 font-medium flex items-center gap-1";
+                badge.innerHTML = "<i class='fa-solid fa-database'></i> Respuestas Integradas (Sin conexión)";
+            }
+        }
+
+        // --- STREAMING_CHUNK: Programación del Sistema de Mensajería ---
+
+        // Renderizar un mensaje en la pantalla
+        function renderMessage(sender, text, isMarkdown = false) {
+            const container = document.getElementById('chat-messages');
+            const wrapper = document.createElement('div');
+            
+            const isBot = sender === 'bot';
+            wrapper.className = `flex items-start gap-3 max-w-[85%] ${isBot ? '' : 'ml-auto flex-row-reverse'}`;
+            
+            const avatar = isBot 
+                ? `<div class="w-8 h-8 bg-emerald-100 text-emerald-700 rounded-xl flex items-center justify-center shrink-0 shadow-sm">
+                       <i class="fa-solid fa-robot text-xs"></i>
+                   </div>`
+                : `<div class="w-8 h-8 bg-slate-100 text-slate-700 rounded-xl flex items-center justify-center shrink-0 shadow-sm font-bold text-xs">
+                       <i class="fa-solid fa-user text-xs text-slate-500"></i>
+                   </div>`;
+
+            // Formatear texto si tiene saltos de línea o elementos en negrita simples
+            let formattedText = text;
+            if (isBot) {
+                formattedText = text
+                    .replace(/\n/g, '<br>')
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            } else {
+                formattedText = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            }
+            
+            const bubbleBg = isBot 
+                ? 'bg-slate-100 text-slate-800 rounded-tl-none border border-slate-200/50' 
+                : 'bg-emerald-600 text-white rounded-tr-none shadow-md shadow-emerald-600/10';
+
+            wrapper.innerHTML = `
+                ${avatar}
+                <div class="${bubbleBg} rounded-2xl p-3.5 text-sm leading-relaxed message-bubble">
+                    ${formattedText}
+                </div>
+            `;
+            
+            container.appendChild(wrapper);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // --- STREAMING_CHUNK: Integración del servicio Gemini API ---
+        async function fetchGeminiResponse(userPrompt) {
+            // Construir el historial para enviarlo al modelo
+            let apiHistory = [];
+            
+            // Limitamos a los últimos 6 turnos para mantener un rendimiento óptimo
+            const recentHistory = chatHistory.slice(-6);
+            recentHistory.forEach(msg => {
+                apiHistory.push({
+                    role: msg.sender === 'user' ? 'user' : 'model',
+                    parts: [{ text: msg.text }]
+                });
+            });
+            
+            apiHistory.push({
+                role: 'user',
+                parts: [{ text: userPrompt }]
+            });
+
+            const systemPrompt = "Eres 'EcoBot', un asistente amigable, paciente y experto en el cuidado del medio ambiente. Tu único propósito es educar, sugerir e incentivar hábitos sustentables como el reciclaje, ahorro de agua y energía. Nunca respondas preguntas que estén fuera del tema del medio ambiente, ecología, cambio climático o sostenibilidad. Si el usuario te pregunta sobre otro tema desvíalo amablemente diciendo que solo hablas de ecología.";
+            
+            const payload = {
+                contents: apiHistory,
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                }
+            };
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${geminiApiKey}`;
+
+            // Implementación de reintentos con backoff exponencial
+            let retries = 3;
+            let delay = 1000;
+            
+            while (retries > 0) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Error API: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    const reply = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                    
+                    if (reply) {
+                        return reply;
+                    } else {
+                        throw new Error("Respuesta de API vacía");
+                    }
+                } catch (error) {
+                    retries--;
+                    if (retries === 0) {
+                        throw error;
+                    }
+                    await new Promise(res => setTimeout(res, delay));
+                    delay *= 2;
+                }
+            }
+        }
+
+        // --- STREAMING_CHUNK: Motor de Respuestas Locales ---
+        function getLocalResponse(text) {
+            const query = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // Normalizar acentos
+            
+            for (const [key, value] of Object.entries(LOCAL_DATABASE)) {
+                if (query.includes(key)) {
+                    return value;
+                }
+            }
+            
+            return "Vaya, no tengo registrada una respuesta para esa consulta en mi base de datos local. 🌿 Prueba preguntándome sobre **'agua'**, **'reciclar'**, **'energia'** o **'plastico'**. \n\n*Nota: Si tienes una clave de API de Gemini, puedes guardarla en el panel de configuración (icono de engranaje) para que pueda responder cualquier pregunta compleja.*";
+        }
+
+        // Enviar mensaje del usuario
+        async function handleSendMessage(event) {
+            if (event) event.preventDefault();
+            
+            const input = document.getElementById('message-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            // Renderizar mensaje de usuario
+            renderMessage('user', text);
+            input.value = '';
+            
+            // Guardar en el historial
+            chatHistory.push({ sender: 'user', text: text });
+
+            // Mostrar indicador de carga
+            const indicator = document.getElementById('typing-indicator');
+            indicator.classList.remove('hidden');
+            const messagesArea = document.getElementById('chat-messages');
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+
+            let botReply = "";
+
+            try {
+                if (geminiApiKey) {
+                    // Llamamos a la API de Gemini
+                    botReply = await fetchGeminiResponse(text);
+                } else {
+                    // Simular pequeño retraso para una experiencia de chat orgánica
+                    await new Promise(res => setTimeout(res, 800));
+                    botReply = getLocalResponse(text);
+                }
+            } catch (err) {
+                console.error("Error al obtener respuesta:", err);
+                botReply = "Lo siento, experimenté una interrupción de red al intentar conectar con mi cerebro de IA. Por favor, reintenta o usa mi base de datos integrada desactivando la clave de API.";
+            } finally {
+                // Ocultar indicador y renderizar respuesta del bot
+                indicator.classList.add('hidden');
+                renderMessage('bot', botReply);
+                chatHistory.push({ sender: 'bot', text: botReply });
+            }
+        }
+
+        // Permitir que los botones predefinidos envíen mensajes de inmediato
+        function selectSuggestion(question) {
+            document.getElementById('message-input').value = question;
+            handleSendMessage();
+        }
+
+        // Limpiar el historial visual del chat
+        function clearChat() {
+            chatHistory = [];
+            const container = document.getElementById('chat-messages');
+            container.innerHTML = "";
+            renderMessage('bot', "Historial de chat borrado. ¡Comencemos de nuevo! Pregúntame sobre el cuidado del agua, el reciclaje o la energía.");
+        }
+
+        // --- STREAMING_CHUNK: Programación de la Calculadora de Huella de Carbono ---
+        
+        function calculateCarbonFootprint() {
+            const transport = parseFloat(document.getElementById('calc-transport').value) || 0;
+            const electricity = parseFloat(document.getElementById('calc-electricity').value) || 0;
+            const diet = document.getElementById('calc-diet').value;
+            const recycle = document.getElementById('calc-recycle').checked;
+
+            // Constantes estimadas de emisión (Factores de emisión simplificados)
+            // 1 km auto prom = 0.18 kg CO2 (x52 semanas / 1000 para toneladas)
+            const co2Transport = (transport * 0.18 * 52) / 1000;
+            // 1 kWh electricidad prom = 0.35 kg CO2 (x12 meses / 1000)
+            const co2Electricidad = (electricity * 0.35 * 12) / 1000;
+            
+            // Dieta
+            let co2Diet = 1.5; // Mediano
+            if (diet === 'high') co2Diet = 2.5;
+            if (diet === 'low') co2Diet = 0.8;
+
+            // Reciclaje (reduce emisiones generales)
+            const reduction = recycle ? -0.3 : 0;
+
+            const totalCo2 = Math.max(0.1, co2Transport + co2Electricidad + co2Diet + reduction);
+
+            // Mostrar el contenedor de resultados
+            const resultBox = document.getElementById('calc-result-box');
+            resultBox.classList.remove('hidden');
+
+            const valSpan = document.getElementById('calc-co2-val');
+            valSpan.innerText = totalCo2.toFixed(2);
+
+            // Clasificación y retroalimentación
+            const badge = document.getElementById('calc-badge');
+            const feedback = document.getElementById('calc-feedback');
+
+            if (totalCo2 < 2.0) {
+                badge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold mb-3 bg-green-100 text-green-800";
+                badge.innerText = "Huella Baja 🌱";
+                feedback.innerText = "¡Excelente! Tus hábitos tienen un impacto muy controlado. Sigue inspirando a otros a llevar una vida sostenible.";
+            } else if (totalCo2 >= 2.0 && totalCo2 <= 5.0) {
+                badge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold mb-3 bg-amber-100 text-amber-800";
+                badge.innerText = "Huella Moderada ⚠️";
+                feedback.innerText = "Estás en el promedio. Podrías reducir tu huella optimizando tus viajes en carro o reduciendo el consumo eléctrico fantasma.";
+            } else {
+                badge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold mb-3 bg-rose-100 text-rose-800";
+                badge.innerText = "Huella Elevada 🔥";
+                feedback.innerText = "Tus emisiones son superiores al promedio aconsejado. Te sugerimos aumentar el uso del transporte público o bicicleta y consumir menos carne de res.";
+            }
+        }
+
+        // Enviar resultados de la calculadora al Bot para análisis detallado
+        function sendResultToBot() {
+            const co2 = document.getElementById('calc-co2-val').innerText;
+            const promptText = `He calculado mi huella de carbono y obtuve un estimado de ${co2} toneladas de CO2 al año. ¿Me das un análisis detallado sobre este valor y consejos prácticos para bajarlo?`;
+            
+            // Asegurarse de cerrar el panel en móviles si corresponde
+            if (window.innerWidth < 1024) {
+                toggleCalculator();
+            }
+
+            selectSuggestion(promptText);
+        }
+
+        // --- STREAMING_CHUNK: Control de Interfaz de Usuario e Interacciones ---
+        
+        function toggleSettings() {
+            const panel = document.getElementById('settings-panel');
+            panel.classList.toggle('hidden');
+            panel.classList.toggle('absolute');
+            panel.classList.toggle('inset-y-4');
+            panel.classList.toggle('left-4');
+            panel.classList.toggle('z-40');
+            panel.classList.toggle('shadow-xl');
+            
+            // Cerrar el otro panel si está abierto
+            if (!panel.classList.contains('hidden')) {
+                document.getElementById('calculator-panel').classList.add('hidden');
+            }
+        }
+
+        function toggleCalculator() {
+            const panel = document.getElementById('calculator-panel');
+            panel.classList.toggle('hidden');
+            panel.classList.toggle('absolute');
+            panel.classList.toggle('inset-y-4');
+            panel.classList.toggle('right-4');
+            panel.classList.toggle('z-40');
+            panel.classList.toggle('shadow-xl');
+            
+            // Cerrar el otro panel si está abierto
+            if (!panel.classList.contains('hidden')) {
+                document.getElementById('settings-panel').classList.add('hidden');
+            }
+        }
+
+        // Reemplazo interactivo del clásico alert()
+        function showCustomModal(title, text, type = "success") {
+            const modal = document.getElementById('custom-modal');
+            const iconBox = document.getElementById('modal-icon-box');
+            
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-text').innerText = text;
+            
+            if (type === "success") {
+                iconBox.className = "w-12 h-12 rounded-2xl flex items-center justify-center text-xl mb-4 bg-green-100 text-green-700";
+                iconBox.innerHTML = "<i class='fa-solid fa-circle-check'></i>";
+            } else {
+                iconBox.className = "w-12 h-12 rounded-2xl flex items-center justify-center text-xl mb-4 bg-amber-100 text-amber-700";
+                iconBox.innerHTML = "<i class='fa-solid fa-triangle-exclamation'></i>";
+            }
+            
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('custom-modal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
